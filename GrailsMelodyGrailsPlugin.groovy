@@ -3,19 +3,20 @@ import net.bull.javamelody.JdbcWrapper
 import net.bull.javamelody.MonitoringFilter
 import net.bull.javamelody.MonitoringProxy
 import net.bull.javamelody.Parameter
-import net.bull.javamelody.Parameters
+import net.bull.javamelody.internal.common.Parameters
 import net.bull.javamelody.SessionListener
 import javax.sql.DataSource
 
 class GrailsMelodyGrailsPlugin {
 
-	def version = "1.59.0"
-	def grailsVersion = "2.0 > *"
+	def version = "1.86.0-2.5.x"
+	def grailsVersion = "2.5.4 > *"
 
 	def loadAfter = [
 		'spring-security-core',
 		'acegi',
-		'shiro'
+		'shiro',
+		'quartz'
 	]
 
 	def title = "JavaMelody Grails Plugin"
@@ -124,11 +125,17 @@ class GrailsMelodyGrailsPlugin {
 		//to 'intercept' method call and collect infomation for monitoring purpose.
 		//The code below mimics 'MonitoringSpringInterceptor.invoke()'
 		def SPRING_COUNTER = MonitoringProxy.getSpringCounter()
-		final boolean DISABLED = GrailsMelodyUtil.getGrailsMelodyConfig(application)?.javamelody?.disabled || Boolean.parseBoolean(Parameters.getParameter(Parameter.DISABLED))
+		final boolean DISABLED = GrailsMelodyUtil.getGrailsMelodyConfig(application)?.javamelody?.disabled || Parameter.DISABLED.getValueAsBoolean()
 
 		if (DISABLED || Parameters.isCounterHidden(SPRING_COUNTER.getName())) {
+			if (DISABLED) {
+				log.debug("Melody is disabled, services will not be enhanced.")
+			} else {
+				log.debug("Spring counter is not displayed, services will not be enhanced.")
+			}
 			return
 		}
+
 
 		//Enable groovy meta programming
 		ExpandoMetaClass.enableGlobally()
